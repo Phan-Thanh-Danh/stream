@@ -236,6 +236,7 @@ docker compose up -d
 ```
 
 Lệnh này sẽ tự động chạy:
+
 1. Backend API (kèm cơ sở dữ liệu SQLite đã được tạo sẵn).
 2. Frontend (được phục vụ bởi Nginx web server).
 3. Coturn TURN server để hỗ trợ kết nối WebRTC khi bị chặn bởi NAT/Firewall.
@@ -243,6 +244,7 @@ Lệnh này sẽ tự động chạy:
 ### 2. Truy cập ứng dụng
 
 Mở trình duyệt (khuyến nghị Chrome/Edge/Firefox mới nhất) truy cập:
+
 - **Từ máy chủ (Host):** `http://localhost:5173`
 - **Từ các máy khác trong mạng LAN:** `http://192.168.2.3:5173` (thay `192.168.2.3` bằng IP LAN thực tế của máy chủ nếu cần)
 
