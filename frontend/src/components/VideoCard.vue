@@ -12,6 +12,8 @@
         playsinline
         muted
         class="h-full w-full object-contain"
+        @loadedmetadata="playVideo"
+        @canplay="playVideo"
       />
 
       <!-- Overlay when no stream yet -->
@@ -88,14 +90,24 @@ const initials = computed(() =>
     .join('')
 )
 
+function playVideo() {
+  if (videoEl.value && props.stream) {
+    videoEl.value.play().catch(() => {})
+  }
+}
+
 // Bind stream to video element whenever stream or video element becomes available
 watch(
   [() => props.stream, videoEl],
   ([stream, el]) => {
     if (el) {
-      el.srcObject = stream ?? null
+      if (el.srcObject !== (stream ?? null)) {
+        el.srcObject = stream ?? null
+      }
       if (stream) {
-        el.play().catch(() => {})
+        playVideo()
+        setTimeout(playVideo, 100)
+        setTimeout(playVideo, 500)
       }
     }
   },

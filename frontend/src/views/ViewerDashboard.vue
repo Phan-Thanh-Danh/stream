@@ -76,7 +76,7 @@ import { useSignalR } from '@/composables/useSignalR'
 import { useWebRtcViewer } from '@/composables/useWebRtcViewer'
 import { useStreamStore } from '@/stores/streamStore'
 
-const { connect, disconnect, invoke } = useSignalR()
+const { connect, disconnect, invoke, onReconnected } = useSignalR()
 const { registerHubHandlers, unregisterHubHandlers } = useWebRtcViewer()
 const streamStore = useStreamStore()
 
@@ -90,6 +90,11 @@ const gridClass = computed(() => {
   if (n === 2) return 'grid grid-cols-1 sm:grid-cols-2 gap-5'
   if (n <= 4) return 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5'
   return 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5'
+})
+
+onReconnected(async () => {
+  console.log('[ViewerDashboard] Reconnected to SignalR hub! Requesting Join...')
+  await invoke('Join')
 })
 
 onMounted(async () => {

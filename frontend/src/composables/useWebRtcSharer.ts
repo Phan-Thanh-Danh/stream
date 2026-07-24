@@ -5,8 +5,27 @@ import { useStreamStore } from '@/stores/streamStore'
 const ICE_SERVERS: RTCConfiguration = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' }
-  ]
+    { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:stun2.l.google.com:19302' },
+    { urls: 'stun:global.stun.twilio.com:3478' },
+    { urls: 'stun:openrelay.metered.ca:80' },
+    {
+      urls: 'turn:openrelay.metered.ca:80',
+      username: 'openrelay',
+      credential: 'openrelay'
+    },
+    {
+      urls: 'turn:openrelay.metered.ca:443',
+      username: 'openrelay',
+      credential: 'openrelay'
+    },
+    {
+      urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+      username: 'openrelay',
+      credential: 'openrelay'
+    }
+  ],
+  iceCandidatePoolSize: 10
 }
 
 export function useWebRtcSharer() {
@@ -123,6 +142,14 @@ export function useWebRtcSharer() {
     viewerConnectionId: string,
     sdpOffer: string
   ) {
+    console.log(`[WebRTC Sharer] Received offer from viewer (${viewerConnectionId})...`)
+
+    // Clean up existing peer connection for this viewer if present
+    if (peerConnections.has(viewerConnectionId)) {
+      peerConnections.get(viewerConnectionId)?.close()
+      peerConnections.delete(viewerConnectionId)
+    }
+
     const pc = createPeerConnection(viewerConnectionId)
 
     await pc.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp: sdpOffer }))

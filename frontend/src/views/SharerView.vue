@@ -81,7 +81,7 @@ import { useSignalR } from '@/composables/useSignalR'
 import { useWebRtcSharer } from '@/composables/useWebRtcSharer'
 import { useStreamStore } from '@/stores/streamStore'
 
-const { connect, disconnect, invoke } = useSignalR()
+const { connect, disconnect, invoke, onReconnected } = useSignalR()
 const { isSharing, error, startSharing, stopSharing } = useWebRtcSharer()
 const streamStore = useStreamStore()
 
@@ -102,6 +102,14 @@ async function handleToggle() {
   }
 }
 
+onReconnected(async () => {
+  if (isSharing.value && streamStore.localStream) {
+    console.log('[SharerView] Reconnected to SignalR hub! Re-announcing StartSharing...')
+    await invoke('Join')
+    await invoke('StartSharing')
+  }
+})
+
 watch(
   [localStream, previewEl],
   ([stream, el]) => {
@@ -118,6 +126,9 @@ watch(
 onMounted(async () => {
   await connect()
   await invoke('Join')
+  if (isSharing.value && streamStore.localStream) {
+    await invoke('StartSharing')
+  }
 })
 
 onUnmounted(async () => {

@@ -6,7 +6,24 @@ const ICE_SERVERS: RTCConfiguration = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'stun:stun2.l.google.com:19302' }
+    { urls: 'stun:stun2.l.google.com:19302' },
+    { urls: 'stun:global.stun.twilio.com:3478' },
+    { urls: 'stun:openrelay.metered.ca:80' },
+    {
+      urls: 'turn:openrelay.metered.ca:80',
+      username: 'openrelay',
+      credential: 'openrelay'
+    },
+    {
+      urls: 'turn:openrelay.metered.ca:443',
+      username: 'openrelay',
+      credential: 'openrelay'
+    },
+    {
+      urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+      username: 'openrelay',
+      credential: 'openrelay'
+    }
   ],
   iceCandidatePoolSize: 10
 }
@@ -37,6 +54,11 @@ export function useWebRtcViewer() {
 
   async function connectToSharer(sharerUserId: number, sharerUsername: string, sharerConnectionId: string) {
     console.log(`[WebRTC Viewer] Connecting to sharer ${sharerUsername} (${sharerConnectionId})...`)
+
+    // Clean up any stale session for this sharer before re-connecting
+    streamStore.removeSession(sharerUserId)
+    pendingCandidates.delete(sharerConnectionId)
+
     const pc = new RTCPeerConnection(ICE_SERVERS)
 
     const session: SharerSession = {
@@ -50,9 +72,21 @@ export function useWebRtcViewer() {
 
     // When we receive the remote stream tracks
     pc.ontrack = (event) => {
-      console.log('[WebRTC Viewer] Received remote track:', event.track.kind, event.streams)
-      const remoteStream = event.streams[0] || new MediaStream([event.track])
-      streamStore.updateSessionStream(sharerUserId, remoteStream)
+      const track = event.track
+      track.enabled = true
+      console.log('[WebRTC Viewer] Received remote track:', track.kind, 'muted:', track.muted)
+
+      const publishStream = () => {
+        const stream = new MediaStream([track])
+        streamStore.updateSessionStream(sharerUserId, stream)
+      }
+
+      track.onunmute = () => {
+        console.log('[WebRTC Viewer] Track unmuted! Updating stream reference in store...')
+        publishStream()
+      }
+
+      publishStream()
     }
 
     // Send ICE candidates to the Sharer

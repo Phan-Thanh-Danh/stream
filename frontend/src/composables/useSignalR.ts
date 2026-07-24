@@ -8,6 +8,8 @@ const HUB_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:5000/api')
 let connection: signalR.HubConnection | null = null
 const isConnected = ref(false)
 
+const reconnectedCallbacks = new Set<() => void>()
+
 export function useSignalR() {
   const authStore = useAuthStore()
 
@@ -25,7 +27,10 @@ export function useSignalR() {
 
     connection.onclose(() => { isConnected.value = false })
     connection.onreconnecting(() => { isConnected.value = false })
-    connection.onreconnected(() => { isConnected.value = true })
+    connection.onreconnected(() => {
+      isConnected.value = true
+      reconnectedCallbacks.forEach(cb => cb())
+    })
 
     // Register default no-op handlers to prevent "No client method with name found" warnings
     const defaultEvents = ['ActiveSharings', 'UserJoined', 'UserDisconnected', 'SharerStarted', 'SharerStopped', 'SharingUserDisconnected']
@@ -52,6 +57,13 @@ export function useSignalR() {
     connection?.off(event, callback)
   }
 
+  function onReconnected(cb: () => void) {
+    reconnectedCallbacks.add(cb)
+    onUnmounted(() => {
+      reconnectedCallbacks.delete(cb)
+    })
+  }
+
   async function invoke(method: string, ...args: any[]) {
     if (!connection || connection.state !== signalR.HubConnectionState.Connected) return
     return connection.invoke(method, ...args)
@@ -61,5 +73,5 @@ export function useSignalR() {
     return connection?.connectionId ?? null
   }
 
-  return { isConnected, connect, disconnect, on, off, invoke, getConnectionId }
+  return { isConnected, connect, disconnect, on, off, onReconnected, invoke, getConnectionId }
 }

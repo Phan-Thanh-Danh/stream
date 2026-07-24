@@ -25,13 +25,14 @@ export const useStreamStore = defineStore('stream', () => {
   // Viewer actions
   function addSession(session: SharerSession) {
     activeSessions.value.set(session.userId, session)
+    activeSessions.value = new Map(activeSessions.value)
   }
 
   function updateSessionStream(userId: number, stream: MediaStream) {
     const session = activeSessions.value.get(userId)
     if (session) {
       session.stream = stream
-      activeSessions.value.set(userId, { ...session })
+      activeSessions.value = new Map(activeSessions.value)
     }
   }
 
@@ -40,12 +41,14 @@ export const useStreamStore = defineStore('stream', () => {
     if (session) {
       session.peerConnection?.close()
       activeSessions.value.delete(userId)
+      activeSessions.value = new Map(activeSessions.value)
     }
   }
 
   function clearSessions() {
     activeSessions.value.forEach(s => s.peerConnection?.close())
     activeSessions.value.clear()
+    activeSessions.value = new Map()
   }
 
   return {
