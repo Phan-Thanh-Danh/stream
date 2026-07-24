@@ -1,25 +1,34 @@
-# 🌐 WebRTC Real-Time Screen Sharing
+<!-- markdownlint-disable MD033 -->
 
-**Hệ thống chia sẻ màn hình theo thời gian thực (Real-time Peer-to-Peer Screen Sharing)**
-
-![.NET 10](https://img.shields.io/badge/.NET%2010-512BD4?style=for-the-badge&logo=dotnet&logoColor=white)
-![Vue 3](https://img.shields.io/badge/Vue.js%203-35495E?style=for-the-badge&logo=vuedotjs&logoColor=4FC08D)
-![WebRTC](https://img.shields.io/badge/WebRTC-333333?style=for-the-badge&logo=webrtc&logoColor=white)
-![SignalR](https://img.shields.io/badge/SignalR-0078D4?style=for-the-badge&logo=microsoft&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+<div align="center">
+  <img src="https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Desktop%20computer/3D/desktop_computer_3d.png" width="120" alt="Icon" />
+  <h1>🌐 WebRTC Real-Time Screen Sharing</h1>
+  <p><strong>Hệ thống chia sẻ màn hình theo thời gian thực (Real-time Peer-to-Peer Screen Sharing)</strong></p>
+  
+  <p>
+    <img src="https://img.shields.io/badge/.NET%2010-512BD4?style=for-the-badge&logo=dotnet&logoColor=white" alt=".NET 10" />
+    <img src="https://img.shields.io/badge/Vue.js%203-35495E?style=for-the-badge&logo=vuedotjs&logoColor=4FC08D" alt="Vue 3" />
+    <img src="https://img.shields.io/badge/WebRTC-333333?style=for-the-badge&logo=webrtc&logoColor=white" alt="WebRTC" />
+    <img src="https://img.shields.io/badge/SignalR-0078D4?style=for-the-badge&logo=microsoft&logoColor=white" alt="SignalR" />
+    <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker" />
+  </p>
+</div>
 
 ---
 
-## 📑 Nội Dung Chính
-
-- [Giới Thiệu](#-giới-thiệu)
-- [Tính Năng Nổi Bật](#-tính-năng-nổi-bật)
-- [Nguyên Lý Hoạt Động Cốt Lõi](#-nguyên-lý-hoạt-động-cốt-lõi)
-- [Sơ Đồ Luồng Hoạt Động](#-sơ-đồ-luồng-hoạt-động-sequence-diagram)
-- [Công Nghệ Sử Dụng](#-công-nghệ-sử-dụng)
-- [Hướng Dẫn Khởi Chạy (Docker)](#-hướng-dẫn-khởi-chạy-docker)
-- [Tài Khoản Demo](#-tài-khoản-demo)
-- [Giải Thích Chi Tiết Code (Deep Dive)](#-giải-thích-chi-tiết-code-deep-dive)
+<details open>
+  <summary><b>📑 Nội Dung Chính (Table of Contents)</b></summary>
+  <ol>
+    <li><a href="#-giới-thiệu">Giới Thiệu</a></li>
+    <li><a href="#-tính-năng-nổi-bật">Tính Năng Nổi Bật</a></li>
+    <li><a href="#-nguyên-lý-hoạt-động-cốt-lõi">Nguyên Lý Hoạt Động Cốt Lõi</a></li>
+    <li><a href="#-sơ-đồ-luồng-hoạt-động">Sơ Đồ Luồng Hoạt Động (Sequence Diagram)</a></li>
+    <li><a href="#-công-nghệ-sử-dụng">Công Nghệ Sử Dụng</a></li>
+    <li><a href="#-hướng-dẫn-khởi-chạy">Hướng Dẫn Khởi Chạy (Docker)</a></li>
+    <li><a href="#-tài-khoản-demo">Tài Khoản Demo</a></li>
+    <li><a href="#-giải-thích-chi-tiết-code">Giải Thích Chi Tiết Code (Deep Dive)</a></li>
+  </ol>
+</details>
 
 ---
 
@@ -39,15 +48,16 @@
 
 ## 💡 Nguyên Lý Hoạt Động Cốt Lõi
 
-> **⚠️ Tuyên Bố Thiết Kế Quan Trọng:**
-> 
-> 🔸 **SignalR chỉ là "Trợ lý Bắt tay" (Signaling Server):** Nhiệm vụ duy nhất của Backend là luân chuyển các gói tin siêu nhẹ gồm SDP Offer, SDP Answer, ICE Candidates và trạng thái Online/Offline.
-> 
-> 🔸 **TUYỆT ĐỐI KHÔNG TRUYỀN VIDEO QUA SERVER:** Toàn bộ luồng hình ảnh/video được truyền **trực tiếp giữa 2 trình duyệt** thông qua `RTCPeerConnection` của WebRTC. Nhờ đó, Backend server hoàn toàn không chịu tải video, giúp hệ thống scale dễ dàng.
+<blockquote style="border-left: 4px solid #0078D4; padding: 10px; background-color: #f3f9ff; color: #333;">
+  <strong>⚠️ Tuyên Bố Thiết Kế Quan Trọng:</strong>
+  <br/><br/>
+  🔸 <strong>SignalR chỉ là "Trợ lý Bắt tay" (Signaling Server):</strong> Nhiệm vụ duy nhất của Backend là luân chuyển các gói tin siêu nhẹ gồm SDP Offer, SDP Answer, ICE Candidates và trạng thái Online/Offline.<br/>
+  🔸 <strong>TUYỆT ĐỐI KHÔNG TRUYỀN VIDEO QUA SERVER:</strong> Toàn bộ luồng hình ảnh/video được truyền <strong>trực tiếp giữa 2 trình duyệt</strong> thông qua <code>RTCPeerConnection</code> của WebRTC. Nhờ đó, Backend server hoàn toàn không chịu tải video, giúp hệ thống scale dễ dàng.
+</blockquote>
 
 ---
 
-## 🔄 Sơ Đồ Luồng Hoạt Động (Sequence Diagram)
+## 🔄 Sơ Đồ Luồng Hoạt Động
 
 Sơ đồ dưới đây mô tả quá trình từ lúc người dùng đăng nhập đến khi video được truyền thành công:
 
@@ -97,43 +107,50 @@ sequenceDiagram
 
 ## 🛠️ Công Nghệ Sử Dụng
 
-### Backend
-- **ASP.NET Core 10 Web API**
-- **SignalR Hub**
-- **Entity Framework Core 10**
-- **JWT Authentication**
-
-### Frontend
-- **Vue 3 (Composition API)**
-- **TypeScript & Pinia**
-- **Tailwind CSS v3**
-- **Native WebRTC API**
-
-### Hạ Tầng (DevOps)
-- **Docker & Docker Compose**
-- **Nginx Web Server**
-- **Coturn (STUN/TURN Server)**
+<table>
+  <tr>
+    <td width="33%" align="center">
+      <b>Backend</b><br/>
+      <img src="https://skillicons.dev/icons?i=dotnet,cs,sqlite" /><br/>
+      ASP.NET Core 10 Web API<br/>
+      SignalR Hub<br/>
+      Entity Framework Core 10<br/>
+      JWT Authentication
+    </td>
+    <td width="33%" align="center">
+      <b>Frontend</b><br/>
+      <img src="https://skillicons.dev/icons?i=vue,ts,tailwind,vite" /><br/>
+      Vue 3 (Composition API)<br/>
+      TypeScript & Pinia<br/>
+      Tailwind CSS v3<br/>
+      Native WebRTC API
+    </td>
+    <td width="33%" align="center">
+      <b>Hạ Tầng (DevOps)</b><br/>
+      <img src="https://skillicons.dev/icons?i=docker,nginx,linux" /><br/>
+      Docker & Docker Compose<br/>
+      Nginx Web Server<br/>
+      Coturn (STUN/TURN Server)
+    </td>
+  </tr>
+</table>
 
 ---
 
-## 🚀 Hướng Dẫn Khởi Chạy (Docker)
+## 🚀 Hướng Dẫn Khởi Chạy
 
 Hệ thống đã được đóng gói hoàn toàn trong Docker. Bạn **không cần** cài đặt .NET SDK hay Node.js trên máy Host.
 
 ### 1️⃣ Chạy Docker Compose
-
 Mở terminal tại thư mục gốc của dự án (`d:\stream`) và chạy lệnh:
 
 ```bash
 docker compose up -d
 ```
-
 > Lệnh này sẽ tự động khởi tạo: Backend API (kèm DB SQLite), Frontend (chạy qua Nginx), và Coturn TURN server để xử lý NAT.
 
 ### 2️⃣ Truy cập Ứng dụng
-
 Mở trình duyệt (khuyến nghị Chrome/Edge/Firefox mới nhất):
-
 - **Từ máy chủ (Host):** [http://localhost:5173](http://localhost:5173)
 - **Từ mạng LAN:** `http://<IP_LAN>:5173` (ví dụ: `http://192.168.2.3:5173`)
 
@@ -154,36 +171,52 @@ Database được tự động seed sẵn các tài khoản sau để bạn test
 
 ## 🔬 Giải Thích Chi Tiết Code (Deep Dive)
 
-### 1. Khởi tạo & Đăng ký Sự hiện diện (Presence)
+<details>
+<summary><b>1. Khởi tạo & Đăng ký Sự hiện diện (Presence)</b></summary>
+<br/>
 
 - **Frontend (`useSignalR.ts`)**: Trình duyệt tạo kết nối WebSocket bảo mật tới Hub kèm JWT Token.
 - **Backend (`StreamHub.cs`)**: Khi client kết nối (`OnConnectedAsync`), Hub lưu `ConnectionId`, `UserId` vào `ConcurrentDictionary`. Lệnh `Join()` trả về danh sách active sharers.
 
-### 2. Người Chia Sẻ bắt đầu thu màn hình
+</details>
+
+<details>
+<summary><b>2. Người Chia Sẻ bắt đầu thu màn hình</b></summary>
+<br/>
 
 - **Frontend (`useWebRtcSharer.ts`)**: Sử dụng chuẩn HTML5 `navigator.mediaDevices.getDisplayMedia(...)`.
 - **Backend**: Ghi nhận trạng thái `_activeSharings` và Broadcast `SharerStarted` tới toàn bộ Viewers.
 
-### 3. Bắt tay WebRTC (Signaling Process)
+</details>
+
+<details>
+<summary><b>3. Bắt tay WebRTC (Signaling Process)</b></summary>
+<br/>
 
 1. **Viewer tạo SDP Offer**: `pc.createOffer()` -> Gửi qua SignalR `SendOffer`.
 2. **Sharer nhận Offer**: Tạo `RTCPeerConnection` riêng cho Viewer đó, `addTrack()` luồng màn hình vào, gọi `pc.setRemoteDescription()` và `pc.createAnswer()`.
 3. **Viewer nhận Answer**: Áp dụng `pc.setRemoteDescription()`. Kết nối logic được thiết lập.
 
-### 4. Hàng chờ ICE Candidate (Xử lý Bất đồng bộ mạng)
+</details>
+
+<details>
+<summary><b>4. Hàng chờ ICE Candidate (Xử lý Bất đồng bộ mạng)</b></summary>
+<br/>
 
 - **Vấn đề**: ICE Candidates có thể đến **trước** khi hàm `setRemoteDescription` hoàn tất.
 - **Giải pháp trong Code**: Sử dụng một **Pending Queue**.
+  ```typescript
+  if (pc.remoteDescription && pc.remoteDescription.type) {
+    await pc.addIceCandidate(new RTCIceCandidate(candidate));
+  } else {
+    pendingCandidates.get(connectionId).push(candidate); // Đợi SDP xử lý xong
+  }
+  ```
+</details>
 
-```typescript
-if (pc.remoteDescription && pc.remoteDescription.type) {
-  await pc.addIceCandidate(new RTCIceCandidate(candidate));
-} else {
-  pendingCandidates.get(connectionId).push(candidate); // Đợi SDP xử lý xong
-}
-```
-
-### 5. Phân Định Trách Nhiệm Thư Mục
+<details>
+<summary><b>5. Phân Định Trách Nhiệm Thư Mục</b></summary>
+<br/>
 
 | Đường dẫn / Component | Nhiệm vụ chính |
 |---|---|
@@ -192,8 +225,11 @@ if (pc.remoteDescription && pc.remoteDescription.type) {
 | `frontend/.../useWebRtcViewer.ts` | Logic tự động mở luồng, gửi SDP Offer, nhận Video Stream. |
 | `frontend/.../streamStore.ts` | State Management (Pinia) lưu danh sách các Stream đang active. |
 
+</details>
+
 ---
 
-> Được thiết kế cho mục đích học tập & ứng dụng thực tế hệ thống **Realtime WebRTC**.
-> 
-> 📝 **License:** MIT
+<div align="center">
+  <p>Được thiết kế cho mục đích học tập & ứng dụng thực tế hệ thống <b>Realtime WebRTC</b>.</p>
+  <p>📝 <b>License:</b> MIT</p>
+</div>
