@@ -8,13 +8,17 @@ import fs from 'fs'
 export default defineConfig(({ mode }) => {
   const isLan = mode === 'lan'
 
-  // HTTPS config for LAN mode — uses mkcert certs
-  const httpsConfig = isLan
-    ? {
+  let httpsConfig = undefined
+  if (isLan) {
+    try {
+      httpsConfig = {
         key: fs.readFileSync('d:/stream/certs/key.pem'),
         cert: fs.readFileSync('d:/stream/certs/cert.pem')
       }
-    : undefined
+    } catch (e) {
+      console.warn('Certs not found, skipping HTTPS config')
+    }
+  }
 
   return {
     plugins: [

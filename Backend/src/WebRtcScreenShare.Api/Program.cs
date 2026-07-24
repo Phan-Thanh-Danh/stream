@@ -83,11 +83,25 @@ builder.Services.AddOpenApi();
 // ─────────────────────────────────────────────────────────────────────────────
 var app = builder.Build();
 
-// ── Auto-migrate database on startup ─────────────────────────────────────────
+// ── Auto-migrate / initialize database on startup ────────────────────────
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    db.Database.Migrate();
+    var useSqlite = string.Equals(
+        Environment.GetEnvironmentVariable("USE_SQLITE"), "true",
+        StringComparison.OrdinalIgnoreCase);
+
+    if (useSqlite)
+    {
+        // SQLite: create directory if needed, then EnsureCreated (applies HasData seed)
+        var dbPath = Environment.GetEnvironmentVariable("SQLITE_DB_PATH") ?? "/app/data/webrtc.db";
+        Directory.CreateDirectory(Path.GetDirectoryName(dbPath)!);
+        db.Database.EnsureCreated();
+    }
+    else
+    {
+        db.Database.Migrate();
+    }
 }
 
 // ── Pipeline ──────────────────────────────────────────────────────────────────

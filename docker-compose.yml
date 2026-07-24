@@ -1,8 +1,44 @@
 services:
+  # ── ASP.NET Core Backend ──────────────────────────────────
+  backend:
+    build: ./Backend
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_URLS: "http://+:5000"
+      ASPNETCORE_ENVIRONMENT: "Development"
+      USE_SQLITE: "true"
+      SQLITE_DB_PATH: "/app/data/webrtc.db"
+      JwtSettings__SecretKey: "WebRtcScreenShare-Super-Secret-Key-256-Bits-Long-2026!"
+      JwtSettings__Issuer: "WebRtcScreenShare"
+      JwtSettings__Audience: "WebRtcScreenShareUsers"
+      JwtSettings__ExpiryMinutes: "480"
+      AllowedOrigins__0: "http://192.168.2.3:5173"
+      AllowedOrigins__1: "http://localhost:5173"
+      IceSettings__StunUrls__0: "stun:192.168.2.3:3478"
+      IceSettings__TurnUrls__0: "turn:192.168.2.3:3478"
+      IceSettings__TurnUsername: "streamuser"
+      IceSettings__TurnCredential: "streampass"
+    ports:
+      - "5000:5000"
+    volumes:
+      - sqlite_data:/app/data
+
+  # ── Vue.js Frontend ───────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: "http://192.168.2.3:5000/api"
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+
+  # ── Coturn TURN Server ────────────────────────────────────
   coturn:
     image: coturn/coturn:latest
     restart: unless-stopped
-    # Bypass docker-entrypoint.sh to avoid auto-detected external-ip conflicting with our config
     entrypoint: ["turnserver", "-c", "/etc/coturn/turnserver.conf"]
     ports:
       - "3478:3478/udp"
@@ -10,3 +46,6 @@ services:
       - "49152-49200:49152-49200/udp"
     volumes:
       - ./turnserver.conf:/etc/coturn/turnserver.conf:ro
+
+volumes:
+  sqlite_data:

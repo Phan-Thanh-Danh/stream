@@ -65,8 +65,15 @@ export function useSignalR() {
   }
 
   async function disconnect() {
-    await connection?.stop()
-    isConnected.value = false
+    try {
+      if (connection && connection.state !== signalR.HubConnectionState.Disconnected) {
+        await connection.stop()
+      }
+    } catch {
+      // Ignore disconnect errors during page transition / reload
+    } finally {
+      isConnected.value = false
+    }
   }
 
   function on(event: string, callback: (...args: any[]) => void) {
@@ -86,7 +93,11 @@ export function useSignalR() {
 
   async function invoke(method: string, ...args: any[]) {
     if (!connection || connection.state !== signalR.HubConnectionState.Connected) return
-    return connection.invoke(method, ...args)
+    try {
+      return await connection.invoke(method, ...args)
+    } catch (err: any) {
+      console.warn(`[SignalR] invoke '${method}' failed:`, err?.message ?? err)
+    }
   }
 
   function getConnectionId() {

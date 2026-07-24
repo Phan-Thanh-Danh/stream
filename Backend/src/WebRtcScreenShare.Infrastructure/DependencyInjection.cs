@@ -13,11 +13,25 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        // EF Core SQL Server
-        services.AddDbContext<ApplicationDbContext>(options =>
-            options.UseSqlServer(
-                configuration.GetConnectionString("DefaultConnection"),
-                b => b.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName)));
+        var useSqlite = string.Equals(
+            Environment.GetEnvironmentVariable("USE_SQLITE"), "true",
+            StringComparison.OrdinalIgnoreCase);
+
+        if (useSqlite)
+        {
+            // SQLite — used in Docker (lightweight, no separate DB container)
+            var dbPath = Environment.GetEnvironmentVariable("SQLITE_DB_PATH") ?? "/app/data/webrtc.db";
+            services.AddDbContext<ApplicationDbContext>(options =>
+                options.UseSqlite($"Data Source={dbPath}"));
+        }
+        else
+        {
+            // SQL Server — used in local development
+            services.AddDbContext<ApplicationDbContext>(options =>
+                options.UseSqlServer(
+                    configuration.GetConnectionString("DefaultConnection"),
+                    b => b.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName)));
+        }
 
         services.AddScoped<IApplicationDbContext>(provider =>
             provider.GetRequiredService<ApplicationDbContext>());
@@ -29,3 +43,4 @@ public static class DependencyInjection
         return services;
     }
 }
+
