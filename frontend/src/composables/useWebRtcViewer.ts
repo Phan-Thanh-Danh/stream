@@ -5,22 +5,13 @@ import type { SharerSession } from '@/types'
 const ICE_SERVERS: RTCConfiguration = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'stun:stun2.l.google.com:19302' },
-    { urls: 'stun:global.stun.twilio.com:3478' },
-    { urls: 'stun:openrelay.metered.ca:80' },
+    { urls: 'stun:stun.metered.ca:80' },
     {
-      urls: 'turn:openrelay.metered.ca:80',
-      username: 'openrelay',
-      credential: 'openrelay'
-    },
-    {
-      urls: 'turn:openrelay.metered.ca:443',
-      username: 'openrelay',
-      credential: 'openrelay'
-    },
-    {
-      urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+      urls: [
+        'turn:openrelay.metered.ca:80',
+        'turn:openrelay.metered.ca:443',
+        'turn:openrelay.metered.ca:443?transport=tcp'
+      ],
       username: 'openrelay',
       credential: 'openrelay'
     }
@@ -60,6 +51,7 @@ export function useWebRtcViewer() {
     pendingCandidates.delete(sharerConnectionId)
 
     const pc = new RTCPeerConnection(ICE_SERVERS)
+    pc.addTransceiver('video', { direction: 'recvonly' })
 
     const session: SharerSession = {
       userId: sharerUserId,
@@ -74,7 +66,7 @@ export function useWebRtcViewer() {
     pc.ontrack = (event) => {
       const track = event.track
       track.enabled = true
-      console.log('[WebRTC Viewer] Received remote track:', track.kind, 'muted:', track.muted)
+      console.log('[WebRTC Viewer] Received remote track:', track.kind, 'muted:', track.muted, 'readyState:', track.readyState)
 
       const publishStream = () => {
         const stream = new MediaStream([track])
@@ -97,8 +89,18 @@ export function useWebRtcViewer() {
       }
     }
 
-    pc.oniceconnectionstatechange = () => {
+    pc.oniceconnectionstatechange = async () => {
       console.log(`[WebRTC Viewer] ICE connection state: ${pc.iceConnectionState}`)
+      if (pc.iceConnectionState === 'failed') {
+        console.warn('[WebRTC Viewer] ICE connection failed! Requesting ICE restart...')
+        try {
+          const offer = await pc.createOffer({ iceRestart: true })
+          await pc.setLocalDescription(offer)
+          await invoke('SendOffer', sharerConnectionId, offer.sdp)
+        } catch (err) {
+          console.error('[WebRTC Viewer] ICE restart error:', err)
+        }
+      }
     }
 
     pc.onconnectionstatechange = () => {

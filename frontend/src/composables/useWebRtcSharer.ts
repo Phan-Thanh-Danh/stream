@@ -5,22 +5,13 @@ import { useStreamStore } from '@/stores/streamStore'
 const ICE_SERVERS: RTCConfiguration = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'stun:stun2.l.google.com:19302' },
-    { urls: 'stun:global.stun.twilio.com:3478' },
-    { urls: 'stun:openrelay.metered.ca:80' },
+    { urls: 'stun:stun.metered.ca:80' },
     {
-      urls: 'turn:openrelay.metered.ca:80',
-      username: 'openrelay',
-      credential: 'openrelay'
-    },
-    {
-      urls: 'turn:openrelay.metered.ca:443',
-      username: 'openrelay',
-      credential: 'openrelay'
-    },
-    {
-      urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+      urls: [
+        'turn:openrelay.metered.ca:80',
+        'turn:openrelay.metered.ca:443',
+        'turn:openrelay.metered.ca:443?transport=tcp'
+      ],
       username: 'openrelay',
       credential: 'openrelay'
     }
@@ -47,7 +38,10 @@ export function useWebRtcSharer() {
     const stream = streamStore.localStream
     if (stream) {
       console.log('[WebRTC Sharer] Adding local tracks to peer connection:', stream.getTracks().map(t => t.kind))
-      stream.getTracks().forEach(track => pc.addTrack(track, stream))
+      stream.getTracks().forEach(track => {
+        track.enabled = true
+        pc.addTrack(track, stream)
+      })
     } else {
       console.warn('[WebRTC Sharer] WARNING: streamStore.localStream is NULL when creating peer connection!')
     }
