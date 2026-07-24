@@ -205,22 +205,48 @@ sequenceDiagram
 
 - **ASP.NET Core 10 Web API**
 - **SignalR Hub** (WebRTC Signaling)
-- **Entity Framework Core 10** (SQL Server / LocalDB)
+- **Entity Framework Core 10** (SQLite trong Docker)
 - **JWT Authentication**
 
 ### Frontend
 
 - **Vue 3 (Composition API + TypeScript)**
-- **Vite 6** (HTTPS Development Mode)
+- **Vite 6** (Build SPA) & **Nginx** (Web Server)
 - **Tailwind CSS v3** & **Lucide Icons**
 - **Pinia** (State Management)
 - **Native WebRTC (`RTCPeerConnection`, `getDisplayMedia`)**
 
+### Hạ tầng (Infrastructure)
+
+- **Docker & Docker Compose** (Triển khai toàn bộ bằng 1 lệnh duy nhất)
+- **Coturn** (STUN/TURN Server xử lý NAT Traversal cho WebRTC trên mạng LAN)
+
 ---
 
-## 🚀 Hướng Dẫn Khởi Chạy
+## 🚀 Hướng Dẫn Khởi Chạy (Docker Compose)
 
-### 1. Chuẩn bị tài khoản Demo (Đã được Seed tự động trong DB)
+Hệ thống đã được đóng gói hoàn toàn trong Docker. Bạn không cần cài đặt .NET SDK hay Node.js trên máy Host.
+
+### 1. Khởi chạy toàn bộ hệ thống
+
+Mở terminal tại thư mục gốc của dự án (`d:\stream`) và chạy lệnh:
+
+```bash
+docker compose up -d
+```
+
+Lệnh này sẽ tự động chạy:
+1. Backend API (kèm cơ sở dữ liệu SQLite đã được tạo sẵn).
+2. Frontend (được phục vụ bởi Nginx web server).
+3. Coturn TURN server để hỗ trợ kết nối WebRTC khi bị chặn bởi NAT/Firewall.
+
+### 2. Truy cập ứng dụng
+
+Mở trình duyệt (khuyến nghị Chrome/Edge/Firefox mới nhất) truy cập:
+- **Từ máy chủ (Host):** `http://localhost:5173`
+- **Từ các máy khác trong mạng LAN:** `http://192.168.2.3:5173` (thay `192.168.2.3` bằng IP LAN thực tế của máy chủ nếu cần)
+
+### 3. Tài khoản Demo (Tự động tạo)
 
 | Tài khoản | Username | Password | Vai trò |
 |---|---|---|---|
@@ -228,25 +254,6 @@ sequenceDiagram
 | Sharer 2 | `sharer2` | `password123` | Người chia sẻ |
 | Viewer 1 | `viewer1` | `password123` | Người xem |
 | Viewer 2 | `viewer2` | `password123` | Người xem |
-
-### 2. Chạy Backend (.NET 10 API)
-
-```bash
-cd Backend/src/WebRtcScreenShare.Api
-dotnet run --launch-profile lan
-```
-
-*Lắng nghe tại `https://192.168.2.3:5001` và `http://192.168.2.3:5000`.*
-
-### 3. Chạy Frontend (Vue 3 + Vite)
-
-```bash
-cd frontend
-npm install
-npm run dev:lan
-```
-
-*Lắng nghe tại `https://192.168.2.3:5173`.*
 
 ---
 
