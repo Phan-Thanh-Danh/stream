@@ -1,0 +1,62 @@
+# ==========================================
+# Root .gitignore for WebRTC Screen Share
+# ==========================================
+
+# --- Environment & OS Files ---
+.DS_Store
+Thumbs.db
+*.tmp
+*.log
+
+# --- Security & Certificates ---
+# Do not commit SSL certificates or private keys to git
+certs/*.pem
+certs/*.pfx
+certs/*.key
+certs/*.crt
+certs/*.cer
+
+# --- IDE & Editors ---
+.idea/
+.vscode/
+*.swp
+*~
+*.sublime-project
+*.sublime-workspace
+
+# --- .NET / C# / Backend ---
+bin/
+obj/
+[B|b]in/
+[O|o]bj/
+.vs/
+*.user
+*.userosscache
+*.sln.docstates
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.userprefs
+mono_crash.*
+[A-Za-z0-9]*_db/
+*.mdf
+*.ldf
+*.db
+
+# --- Frontend (Node / Vue 3 / Vite) ---
+node_modules/
+frontend/node_modules/
+dist/
+frontend/dist/
+dist-ssr/
+frontend/dist-ssr/
+.vite/
+frontend/.vite/
+*.local
+frontend/*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*

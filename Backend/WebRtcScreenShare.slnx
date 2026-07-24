@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/WebRtcScreenShare.Api/WebRtcScreenShare.Api.csproj" />
+    <Project Path="src/WebRtcScreenShare.Application/WebRtcScreenShare.Application.csproj" />
+    <Project Path="src/WebRtcScreenShare.Domain/WebRtcScreenShare.Domain.csproj" />
+    <Project Path="src/WebRtcScreenShare.Infrastructure/WebRtcScreenShare.Infrastructure.csproj" />
+  </Folder>
+</Solution>
