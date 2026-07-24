@@ -33,15 +33,18 @@ public class StreamHub : Hub
     {
         if (_connections.TryRemove(Context.ConnectionId, out var user))
         {
-            _userToConnection.TryRemove(user.UserId, out _);
-
-            // If the disconnected user was sharing, notify all Viewers
-            if (_activeSharings.TryRemove(user.UserId, out _))
+            // Only remove mapping if Context.ConnectionId matches the current active connection for this user
+            if (_userToConnection.TryGetValue(user.UserId, out var activeConnId) && activeConnId == Context.ConnectionId)
             {
-                await Clients.Others.SendAsync("SharingUserDisconnected", user.UserId, user.Username);
+                _userToConnection.TryRemove(user.UserId, out _);
+
+                if (_activeSharings.TryRemove(user.UserId, out _))
+                {
+                    await Clients.Others.SendAsync("SharingUserDisconnected", user.UserId, user.Username);
+                }
             }
 
-            await Clients.Others.SendAsync("UserDisconnected", user.UserId, user.Username);
+            await Clients.Others.SendAsync("UserDisconnected", user.UserId, user.Username, Context.ConnectionId);
         }
 
         await base.OnDisconnectedAsync(exception);

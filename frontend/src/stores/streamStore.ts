@@ -40,13 +40,17 @@ export const useStreamStore = defineStore('stream', () => {
     const session = activeSessions.value.get(userId)
     if (session) {
       session.peerConnection?.close()
+      session.stream?.getTracks().forEach(t => t.stop())
       activeSessions.value.delete(userId)
       activeSessions.value = new Map(activeSessions.value)
     }
   }
 
   function clearSessions() {
-    activeSessions.value.forEach(s => s.peerConnection?.close())
+    activeSessions.value.forEach(s => {
+      s.peerConnection?.close()
+      s.stream?.getTracks().forEach(t => t.stop())
+    })
     activeSessions.value.clear()
     activeSessions.value = new Map()
   }

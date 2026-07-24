@@ -101,6 +101,7 @@ export function useWebRtcSharer() {
       // Register hub handlers
       on('ReceiveOffer', handleReceiveOffer)
       on('ReceiveIceCandidate', handleReceiveIceCandidate)
+      on('UserDisconnected', handleUserDisconnected)
 
       // Notify hub that we started sharing
       await invoke('StartSharing')
@@ -125,9 +126,19 @@ export function useWebRtcSharer() {
     // Remove hub handlers
     off('ReceiveOffer', handleReceiveOffer)
     off('ReceiveIceCandidate', handleReceiveIceCandidate)
+    off('UserDisconnected', handleUserDisconnected)
 
     // Notify hub
     await invoke('StopSharing')
+  }
+
+  function handleUserDisconnected(_userId: number, _username: string, disconnectedConnectionId?: string) {
+    if (disconnectedConnectionId && peerConnections.has(disconnectedConnectionId)) {
+      console.log(`[WebRTC Sharer] Cleaning up disconnected peer connection (${disconnectedConnectionId})...`)
+      peerConnections.get(disconnectedConnectionId)?.close()
+      peerConnections.delete(disconnectedConnectionId)
+      pendingCandidates.delete(disconnectedConnectionId)
+    }
   }
 
   async function handleReceiveOffer(
@@ -142,6 +153,7 @@ export function useWebRtcSharer() {
     if (peerConnections.has(viewerConnectionId)) {
       peerConnections.get(viewerConnectionId)?.close()
       peerConnections.delete(viewerConnectionId)
+      pendingCandidates.delete(viewerConnectionId)
     }
 
     const pc = createPeerConnection(viewerConnectionId)

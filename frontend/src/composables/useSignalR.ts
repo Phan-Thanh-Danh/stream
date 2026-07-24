@@ -10,38 +10,58 @@ const isConnected = ref(false)
 
 const reconnectedCallbacks = new Set<() => void>()
 
+let connectingPromise: Promise<void> | null = null
+
 export function useSignalR() {
   const authStore = useAuthStore()
 
   async function connect() {
-    if (connection && connection.state === signalR.HubConnectionState.Connected) return
-
-    connection = new signalR.HubConnectionBuilder()
-      .withUrl(HUB_URL, {
-        accessTokenFactory: () => authStore.token ?? '',
-        transport: signalR.HttpTransportType.WebSockets
-      })
-      .withAutomaticReconnect()
-      .configureLogging(signalR.LogLevel.Warning)
-      .build()
-
-    connection.onclose(() => { isConnected.value = false })
-    connection.onreconnecting(() => { isConnected.value = false })
-    connection.onreconnected(() => {
+    if (connection && connection.state === signalR.HubConnectionState.Connected) {
       isConnected.value = true
-      reconnectedCallbacks.forEach(cb => cb())
-    })
+      return
+    }
 
-    // Register default no-op handlers to prevent "No client method with name found" warnings
-    const defaultEvents = ['ActiveSharings', 'UserJoined', 'UserDisconnected', 'SharerStarted', 'SharerStopped', 'SharingUserDisconnected']
-    defaultEvents.forEach(evt => {
-      connection!.on(evt, () => {})
-    })
+    if (connectingPromise) {
+      await connectingPromise
+      return
+    }
 
-    await connection.start()
-    isConnected.value = true
-    // NOTE: Do NOT call Join() here.
-    // Each view must call invoke('Join') AFTER registering its own hub handlers.
+    connectingPromise = (async () => {
+      try {
+        if (!connection || connection.state === signalR.HubConnectionState.Disconnected) {
+          connection = new signalR.HubConnectionBuilder()
+            .withUrl(HUB_URL, {
+              accessTokenFactory: () => authStore.token ?? '',
+              transport: signalR.HttpTransportType.WebSockets
+            })
+            .withAutomaticReconnect()
+            .configureLogging(signalR.LogLevel.Warning)
+            .build()
+
+          connection.onclose(() => { isConnected.value = false })
+          connection.onreconnecting(() => { isConnected.value = false })
+          connection.onreconnected(() => {
+            isConnected.value = true
+            reconnectedCallbacks.forEach(cb => cb())
+          })
+
+          // Register default no-op handlers to prevent "No client method with name found" warnings
+          const defaultEvents = ['ActiveSharings', 'UserJoined', 'UserDisconnected', 'SharerStarted', 'SharerStopped', 'SharingUserDisconnected']
+          defaultEvents.forEach(evt => {
+            connection!.on(evt, () => {})
+          })
+        }
+
+        if (connection.state === signalR.HubConnectionState.Disconnected) {
+          await connection.start()
+        }
+        isConnected.value = true
+      } finally {
+        connectingPromise = null
+      }
+    })()
+
+    await connectingPromise
   }
 
   async function disconnect() {
