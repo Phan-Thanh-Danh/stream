@@ -1,23 +1,7 @@
 import { useSignalR } from './useSignalR'
 import { useStreamStore } from '@/stores/streamStore'
 import type { SharerSession } from '@/types'
-
-const ICE_SERVERS: RTCConfiguration = {
-  iceServers: [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun.metered.ca:80' },
-    {
-      urls: [
-        'turn:openrelay.metered.ca:80',
-        'turn:openrelay.metered.ca:443',
-        'turn:openrelay.metered.ca:443?transport=tcp'
-      ],
-      username: 'openrelay',
-      credential: 'openrelay'
-    }
-  ],
-  iceCandidatePoolSize: 10
-}
+import { fetchIceConfig } from '@/config/iceConfig'
 
 export function useWebRtcViewer() {
   const { on, off, invoke } = useSignalR()
@@ -50,7 +34,8 @@ export function useWebRtcViewer() {
     streamStore.removeSession(sharerUserId)
     pendingCandidates.delete(sharerConnectionId)
 
-    const pc = new RTCPeerConnection(ICE_SERVERS)
+    const iceConfig = await fetchIceConfig()
+    const pc = new RTCPeerConnection(iceConfig)
     pc.addTransceiver('video', { direction: 'recvonly' })
 
     const session: SharerSession = {
@@ -73,12 +58,16 @@ export function useWebRtcViewer() {
         streamStore.updateSessionStream(sharerUserId, stream)
       }
 
+      // FIX 2: Only publish when track is actually live (not muted).
+      // Publishing a muted track causes a permanent black screen.
       track.onunmute = () => {
-        console.log('[WebRTC Viewer] Track unmuted! Updating stream reference in store...')
+        console.log('[WebRTC Viewer] Track unmuted! Publishing stream...')
         publishStream()
       }
 
-      publishStream()
+      if (!track.muted) {
+        publishStream()
+      }
     }
 
     // Send ICE candidates to the Sharer
@@ -89,17 +78,16 @@ export function useWebRtcViewer() {
       }
     }
 
+    // FIX 3: Replace broken ICE-restart logic with a clean full reconnect.
+    // ICE restart on a failed connection is unreliable; tearing down and
+    // re-creating the PeerConnection from scratch is more robust.
     pc.oniceconnectionstatechange = async () => {
       console.log(`[WebRTC Viewer] ICE connection state: ${pc.iceConnectionState}`)
       if (pc.iceConnectionState === 'failed') {
-        console.warn('[WebRTC Viewer] ICE connection failed! Requesting ICE restart...')
-        try {
-          const offer = await pc.createOffer({ iceRestart: true })
-          await pc.setLocalDescription(offer)
-          await invoke('SendOffer', sharerConnectionId, offer.sdp)
-        } catch (err) {
-          console.error('[WebRTC Viewer] ICE restart error:', err)
-        }
+        console.warn('[WebRTC Viewer] ICE failed — performing full reconnect...')
+        streamStore.removeSession(sharerUserId)
+        pendingCandidates.delete(sharerConnectionId)
+        await connectToSharer(sharerUserId, sharerUsername, sharerConnectionId)
       }
     }
 

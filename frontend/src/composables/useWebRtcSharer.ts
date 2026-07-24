@@ -1,23 +1,7 @@
 import { ref } from 'vue'
 import { useSignalR } from './useSignalR'
 import { useStreamStore } from '@/stores/streamStore'
-
-const ICE_SERVERS: RTCConfiguration = {
-  iceServers: [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun.metered.ca:80' },
-    {
-      urls: [
-        'turn:openrelay.metered.ca:80',
-        'turn:openrelay.metered.ca:443',
-        'turn:openrelay.metered.ca:443?transport=tcp'
-      ],
-      username: 'openrelay',
-      credential: 'openrelay'
-    }
-  ],
-  iceCandidatePoolSize: 10
-}
+import { fetchIceConfig } from '@/config/iceConfig'
 
 export function useWebRtcSharer() {
   const { on, off, invoke } = useSignalR()
@@ -30,9 +14,10 @@ export function useWebRtcSharer() {
   const error = ref<string | null>(null)
   const isSharing = ref(false)
 
-  function createPeerConnection(viewerConnectionId: string): RTCPeerConnection {
+  async function createPeerConnection(viewerConnectionId: string): Promise<RTCPeerConnection> {
     console.log(`[WebRTC Sharer] Creating peer connection for viewer (${viewerConnectionId})...`)
-    const pc = new RTCPeerConnection(ICE_SERVERS)
+    const iceConfig = await fetchIceConfig()
+    const pc = new RTCPeerConnection(iceConfig)
 
     // Add all local tracks to the peer connection
     const stream = streamStore.localStream
@@ -156,7 +141,7 @@ export function useWebRtcSharer() {
       pendingCandidates.delete(viewerConnectionId)
     }
 
-    const pc = createPeerConnection(viewerConnectionId)
+    const pc = await createPeerConnection(viewerConnectionId)
 
     await pc.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp: sdpOffer }))
 
